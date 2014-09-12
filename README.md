@@ -10,3 +10,8 @@ Features
 - dynamic router (with variables) works with or without url rewriting
 - easy and fast rendering template system. We don't use cache files. Our framework is so fast it doesn't have to hide in cache files.
 - extremely fast. We use PHP, only that. We don't depend on any other framework.
+
+Example
+=======
+
+app/ folder is just an application example. You can reuse this app folder when starting a project.
