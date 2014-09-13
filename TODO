@@ -1,0 +1,4 @@
++ Database loader
++ Journal
++ Session handler (to save the lang, etc.)
++ Get the user default lang

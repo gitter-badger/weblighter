@@ -17,13 +17,10 @@ class Controller_Exception {
       $this->data['url_prefix'] = \Data_Config::$url_prefix;
       $this->data['exception'] = $this->message;
 
-      var_dump($this->message);
-      /*$this->translator = new weblighter\Translator(\Data_Config::$default_lang);
-      $this->data['t'] = $this->translator;*/
+      $this->translator = new weblighter\Translator(\Data_Config::$default_lang);
+      $this->data['t'] = $this->translator;
 
-      //$this->content  = (new weblighter\Tplparser('header.php', $this->data))->display();
       $this->content = (new weblighter\Tplparser('exception.php', $this->data))->display();
-      //$this->content .= (new weblighter\Tplparser('footer.php', $this->data))->display();
     }
     catch (Exception $e) {
       die('ERROR: '.$e->getMessage());

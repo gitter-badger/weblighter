@@ -98,7 +98,7 @@ class weblighter {
             if (is_string($leroute)) {
               $controller = $leroute;
               if (!class_exists($controller, true)) {
-                //throw new \Exception('action '.$action.' not defined!');
+                throw new \Exception('action '.$action.' not defined!');
               }
               else {
                 $route = new $controller();
@@ -199,50 +199,50 @@ class Tplparser {
     }
   }
 
-  function replaceTags($content) {
+  function replaceTags($lecontent) {
     // {/LOOP} ou {/IF}
-    $content = preg_replace('~\{/(?i)(LOOP|IF)\}~', '<?php } ?>', $content);
+    $lecontent = preg_replace('~\{/(?i)(LOOP|IF)\}~', '<?php } ?>', $lecontent);
     // {IF a = true} (or false)
-    $content = preg_replace('~\{(?i)IF (\w+) (=|(?i)eq) ((?i)TRUE|(?i)FALSE)\}~', '<?php if ((isset(\$$1) && \$$1 == $3) or (isset($this->data[\'$1\']) && $this->data[\'$1\'] == $3)) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+) (=|(?i)eq) ((?i)TRUE|(?i)FALSE)\}~', '<?php if ((isset(\$$1) && \$$1 == $3) or (isset($this->data[\'$1\']) && $this->data[\'$1\'] == $3)) { ?>', $lecontent);
     // {IF a ! empty}
-    $content = preg_replace('~\{(?i)IF (\w+) (!|(?i)not) ((?i)empty)\}~', '<?php if (!empty($this->data[\'$1\'])) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+) (!|(?i)not) ((?i)empty)\}~', '<?php if (!empty($this->data[\'$1\'])) { ?>', $lecontent);
     // {IF a.b ! empty}
-    $content = preg_replace('~\{(?i)IF (\w+)\.(\w+) (!|(?i)not) ((?i)empty)\}~', '<?php if ((is_object(\$$1) and !empty(\$$1->$2)) or (is_array(\$$1) && !empty(\$$1[\'$2\'])) or (is_object($this->data[\'$1\']) && !empty($this->data[\'$1\']->$2)) or (is_array($this->data[\'$1\']) && !empty($this->data[\'$1\'][\'$2\']))) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) (!|(?i)not) ((?i)empty)\}~', '<?php if ((is_object(\$$1) and !empty(\$$1->$2)) or (is_array(\$$1) && !empty(\$$1[\'$2\'])) or (is_object($this->data[\'$1\']) && !empty($this->data[\'$1\']->$2)) or (is_array($this->data[\'$1\']) && !empty($this->data[\'$1\'][\'$2\']))) { ?>', $lecontent);
     // {IF a ! empty}
 
     // {IF a.b = {c}}
-    $content = preg_replace('~\{(?i)IF (\w+)\.(\w+) = \{(\w+)\}\}~', '<?php if ((isset(\$$1) && is_object(\$$1) && \$$1->$2 == $this->data[\'$3\']) or (isset(\$$1) && is_array(\$$1) && \$$1[\'$2\'] == $this->data[\'$3\']) or (isset($this->data[\'$1\']) && is_object($this->data[\'$1\']) && $this->data[\'$1\']->$2 == $this->data[\'$3\']) or (isset($this->data[\'$1\']) && is_array($this->data[\'$1\']) && $this->data[\'$1\'][\'$2\'] == $this->data[\'$3\'])) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) = \{(\w+)\}\}~', '<?php if ((isset(\$$1) && is_object(\$$1) && \$$1->$2 == $this->data[\'$3\']) or (isset(\$$1) && is_array(\$$1) && \$$1[\'$2\'] == $this->data[\'$3\']) or (isset($this->data[\'$1\']) && is_object($this->data[\'$1\']) && $this->data[\'$1\']->$2 == $this->data[\'$3\']) or (isset($this->data[\'$1\']) && is_array($this->data[\'$1\']) && $this->data[\'$1\'][\'$2\'] == $this->data[\'$3\'])) { ?>', $lecontent);
     // {IF a = {c}}
-    $content = preg_replace('~\{(?i)IF (\w+) = \{(\w+)\}\}~', '<?php if ((isset(\$$1) && isset(\$$2) && \$$1 == \$$2) or (isset(\$$1) && isset($this->data[\'$2\']) && \$$1 == $this->data[\'$2\'])) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+) = \{(\w+)\}\}~', '<?php if ((isset(\$$1) && isset(\$$2) && \$$1 == \$$2) or (isset(\$$1) && isset($this->data[\'$2\']) && \$$1 == $this->data[\'$2\'])) { ?>', $lecontent);
     // {IF a.b = true} (or false)
-    $content = preg_replace('~\{(?i)IF (\w+)\.(\w+) (=|(?i)eq) (?i)(TRUE|FALSE)\}~', '<?php if ((is_object(\$$1) && \$$1->$2 == $3) or (is_array(\$$1) && \$$1[\'$2\'] == $3)) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) (=|(?i)eq) (?i)(TRUE|FALSE)\}~', '<?php if ((is_object(\$$1) && \$$1->$2 == $3) or (is_array(\$$1) && \$$1[\'$2\'] == $3)) { ?>', $lecontent);
     // {IF a.b = c}
-    $content = preg_replace('~\{(?i)IF (\w+)\.(\w+) (=|(?i)eq) (\w+)\}~', '<?php if ((is_object(\$$1) && \$$1->$2 == \$$3) or (is_array(\$$1) && \$$1[\'$2\'] == \$$3)) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) (=|(?i)eq) (\w+)\}~', '<?php if ((is_object(\$$1) && \$$1->$2 == \$$3) or (is_array(\$$1) && \$$1[\'$2\'] == \$$3)) { ?>', $lecontent);
     // {IF a.b = 'c'}
-    $content = preg_replace('~\{(?i)IF (\w+)\.(\w+) (=|(?i)eq) \'(\w+)\'\}~', '<?php if (((is_object(\$$1) && \$$1->$2 == \'$4\') or (is_array(\$$1) && \$$1[\'$2\'] == \'$4\')) || ((is_object($this->data[\'$1\']) && $this->data[\'$1\']->$2 == \'$4\') or (is_array($this->data[\'$1\']) && $this->data[\'$1\'][\'$2\'] == \'$4\'))) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) (=|(?i)eq) \'(\w+)\'\}~', '<?php if (((is_object(\$$1) && \$$1->$2 == \'$4\') or (is_array(\$$1) && \$$1[\'$2\'] == \'$4\')) || ((is_object($this->data[\'$1\']) && $this->data[\'$1\']->$2 == \'$4\') or (is_array($this->data[\'$1\']) && $this->data[\'$1\'][\'$2\'] == \'$4\'))) { ?>', $lecontent);
     // {IF a = c}
-    $content = preg_replace('~\{(?i)IF (\w+) (=|(?i)eq) (\w+)\}~', '<?php if (\$$1 == \$$2) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+) (=|(?i)eq) (\w+)\}~', '<?php if (\$$1 == \$$2) { ?>', $lecontent);
     // {IF a = 'c'}
-    $content = preg_replace('~\{(?i)IF (\w+) (=|(?i)eq) \'(\w+)\'\}~', '<?php if ((isset(\$$1) && (\$$1 == \'$3\')) or (isset($this->data[\'$1\']) && ( $this->data[\'$1\'] == \'$3\'))) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+) (=|(?i)eq) \'(\w+)\'\}~', '<?php if ((isset(\$$1) && (\$$1 == \'$3\')) or (isset($this->data[\'$1\']) && ( $this->data[\'$1\'] == \'$3\'))) { ?>', $lecontent);
     // {IF a cs 'c'}
-    $content = preg_replace('~\{(?i)IF (\w+) ((?i)cs) \'(\w+)\'\}~', '<?php if ((isset(\$$1) && (strpos(\$$1, \'$3\') !== false)) or (isset($this->data[\'$1\']) && (strpos($this->data[\'$1\'], \'$3\') !== false))) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)IF (\w+) ((?i)cs) \'(\w+)\'\}~', '<?php if ((isset(\$$1) && (strpos(\$$1, \'$3\') !== false)) or (isset($this->data[\'$1\']) && (strpos($this->data[\'$1\'], \'$3\') !== false))) { ?>', $lecontent);
     // {ELSE}
-    $content = preg_replace('~\{(?i)ELSE\}~', '<?php } else { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)ELSE\}~', '<?php } else { ?>', $lecontent);
     // {url(link)}
-    $content = preg_replace('~\{(?i)URL\((.*?)\)\}~', '<?php echo $this->generateUrl(\'$1\'); ?>', $content);
+    $lecontent = preg_replace('~\{(?i)URL\((.*?)\)\}~', '<?php echo $this->generateUrl(\'$1\'); ?>', $lecontent);
     // {_Text} => translator
-    $content = preg_replace('~\{_(.*?)\}~', '<?php echo $this->translate(\'$1\'); ?>', $content);
+    $lecontent = preg_replace('~\{_(.*?)\}~', '<?php echo $this->translate(\'$1\'); ?>', $lecontent);
     // {a.b}
-    $content = preg_replace('~\{(\w+)\.(\w+)\}~', '<?php if (is_object(\$$1)) { echo \$$1->$2; } elseif (is_array(\$$1)) { echo \$$1[\'$2\']; } elseif (is_object($this->data[\'$1\'])) { echo $this->data[\'$1\']->$2; } elseif (is_array($this->data[\'$1\'])) { echo $this->data[\'$1\'][\'$2\']; } ?>', $content);
+    $lecontent = preg_replace('~\{(\w+)\.(\w+)\}~', '<?php if (is_object(\$$1)) { echo \$$1->$2; } elseif (is_array(\$$1)) { echo \$$1[\'$2\']; } elseif (is_object($this->data[\'$1\'])) { echo $this->data[\'$1\']->$2; } elseif (is_array($this->data[\'$1\'])) { echo $this->data[\'$1\'][\'$2\']; } ?>', $lecontent);
     // {a}
-    $content = preg_replace('~\{(\w+)\}~', '<?php if (isset(\$$1)) {echo \$$1;} elseif (isset($this->data[\'$1\'])) {echo $this->data[\'$1\']; } ?>', $content);
+    $lecontent = preg_replace('~\{(\w+)\}~', '<?php if (isset(\$$1)) {echo \$$1;} elseif (isset($this->data[\'$1\'])) {echo $this->data[\'$1\']; } ?>', $lecontent);
     // {LOOP table AS line}
-    $content = preg_replace('~\{(?i)LOOP (\w+) (?i)AS (\w+)\}~', '<?php foreach ( $this->data[\'$1\'] as \$$2 ) { ?>', $content);
+    $lecontent = preg_replace('~\{(?i)LOOP (\w+) (?i)AS (\w+)\}~', '<?php foreach ( $this->data[\'$1\'] as \$$2 ) { ?>', $lecontent);
 
-    return $content;
+    return $lecontent;
   }
 
-  function execute($content) {
+  function execute($lecontent) {
     $result = null;
 
     /*
@@ -252,7 +252,7 @@ class Tplparser {
     */
 
     ob_start();
-    $eval = @eval("?>".$content."<?php return true; ?>");
+    $eval = @eval("?>".$lecontent."<?php return true; ?>");
 
     if ($eval !== true) {
       $result = 'ERROR IN template: '.$this->file.'<br/>';
