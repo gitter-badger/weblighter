@@ -2,14 +2,21 @@
 
 class Data_Config {
 
+  //Site title
   public static $site_title = 'Webligher demo app';
 
+  //Site slogan
   public static $site_slogan = 'Yet a very small framework but powerful enough';
 
+  //Active theme
   public static $theme = 'plain';
+
+  //Default timezone
+  public static $timezone = 'Europe/Paris';
 
   //Default language
   public static $default_lang = 'fr_FR';
+
   //Locales directory
   public static $locale_dir = 'i18n/';
 
@@ -23,5 +30,6 @@ class Data_Config {
   // From which url parameter do we get the current action?
   public static $url_param = 'do';
 
+  //Will error be output?
   public static $debug = true;
 }

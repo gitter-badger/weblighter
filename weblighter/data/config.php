@@ -2,15 +2,21 @@
 
 class Data_Config {
 
+  //Site title
   public static $site_title = 'Weblighter';
 
+  //Site slogan
   public static $site_slogan = 'Weblighter default website';
 
-  //Put the active theme here
+  //Active theme
   public static $theme = 'default';
+
+  //Default timezone
+  public static $timezone = 'Europe/Paris';
 
   //Default language
   public static $default_lang = 'en_US';
+
   //Locales directory
   public static $locale_dir = 'i18n/';
 
@@ -24,5 +30,6 @@ class Data_Config {
   // From which url parameter do we get the current action?
   public static $url_param = 'action';
 
+  //Will error be output?
   public static $debug = true;
 }

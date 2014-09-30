@@ -28,9 +28,15 @@ class weblighter {
       });
 
       // DEBUG mode set in app config file
-      if (\Data_Config::$debug) {
+      if (!empty(\Data_Config::$debug)) {
         error_reporting(-1);
         ini_set('display_errors', 1);
+      }
+
+      // Default timezone
+      if (!empty(\Data_Config::$timezone)) {
+        if (in_array(\Data_Config::$timezone, timezone_identifiers_list()))
+          date_default_timezone_set(\Data_Config::$timezone);
       }
 
       // WHAT is the current user action ?
