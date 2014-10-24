@@ -1,3 +1,5 @@
 {
-  "Hello World": "Bonjour Monde"
+  "home": "Accueil",
+  "welcome_text": "Bonjour Monde",
+  "text": "Je suis un message rédigé en Français. Si vous lisez actuellement ce texte, cela signifie que les textes traduits sont correctement chargés!"
 }

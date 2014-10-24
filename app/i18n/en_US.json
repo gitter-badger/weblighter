@@ -1,3 +1,5 @@
 {
-  "Hello World": "Hello World"
+  "home": "Home",
+  "welcome_text": "Hello World",
+  "text": "I am a message and I'm written in English. If you are currently reading this english text, it means the translated text loaded successfully!"
 }

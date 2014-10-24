@@ -112,11 +112,22 @@ class weblighter {
               }
             }
             elseif (is_array($leroute)) {
-              $route = $leroute['ctrl'];
-              $method = $leroute['func'];
+              $route = new $leroute['ctrl'];
+              if (!empty($leroute['func']))
+                $method = $leroute['func'];
+              else
+                $method = "display";
             }
 
-            $this->content = $route->$method($params);
+            if (!empty($leroute['params'])) {
+              if (is_array($leroute['params'])) {
+                  $params = array_merge($leroute['params'], $params, @$_GET);
+              }
+            }
+            if (!empty($params))
+              $this->content = $route->$method($params);
+            else
+              $this->content = $route->$method();
 
             break;
           }
@@ -201,7 +212,7 @@ class Tplparser {
       return file_get_contents($file);
     }
     else {
-      throw new Exception('File not found: '.$file);
+      throw new \Exception('File not found: '.$file);
     }
   }
 
