@@ -181,6 +181,10 @@ class weblighter {
 *     <p>{post.content}</p>
 *   </article>
 *   {/loop}
+
+* Type argument allows to define the type of content to be loaded
+* php will be parsed and execute
+* markdown will be parsed and rendered
 */
 
 class Tplparser {
@@ -188,14 +192,24 @@ class Tplparser {
   private $file;
   private $data;
 
-  function __construct($tpl, $data = null) {
+  function __construct($tpl, $data = null, $type = 'php') {
 
     $this->data = $data;
 
-    $this->file = APP_PATH.'themes/'.\Data_Config::$theme.'/'.$tpl;
+    if (!file_exists($this->file = APP_PATH.'themes/'.\Data_Config::$theme.'/'.$tpl )) $this->file = APP_PATH.$tpl;
     $this->content = $this->getFile($this->file);
-    $this->content = $this->replaceTags($this->content);
-    $this->content = $this->execute($this->content);
+
+    if ($type == 'php')
+    {
+      $this->content = $this->replaceTags($this->content);
+      $this->content = $this->execute($this->content);
+    }
+    elseif ($type == 'markdown')
+    {
+      $parsedown = new \Vendors_Parsedown_Parsedown();
+      $parsedown->setMarkupEscaped(true);
+      $this->content = $parsedown->text($this->content);
+    }
   }
 
   function generateUrl($action) {
