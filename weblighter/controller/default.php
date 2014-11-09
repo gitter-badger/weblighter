@@ -1,8 +1,11 @@
 <?php
 
-abstract class Controller_Default {
-  function __construct() {
+abstract class Controller_Default
+{
+  function __construct()
+  {
     $this->data['site_title'] = \Data_Config::$site_title;
+
     $this->data['theme'] = \Data_Config::$theme;
 
     if (!empty($_GET['action']))
@@ -15,8 +18,30 @@ abstract class Controller_Default {
     }
     $this->data['url_prefix'] = \Data_Config::$url_prefix;
 
-    $this->translator = new weblighter\Translator(\Data_Config::$default_lang);
+    //Default Translator or the one set in the route
+    if (!empty(func_num_args()))
+    {
+      $lang = func_get_args()[0];
+      $this->prepareTranslator($lang);
+    }
+    else
+    {
+      $this->prepareTranslator(\Data_Config::$default_lang);
+    }
 
+  }
+
+  function prepareTranslator($lang)
+  {
+    if (!empty($lang))
+    {
+      $this->translator = new weblighter\Translator($lang);
+    }
+    else
+    {
+      $this->translator = new weblighter\Translator(\Data_Config::$default_lang);
+
+    }
     $this->data['t'] = $this->translator;
   }
 
