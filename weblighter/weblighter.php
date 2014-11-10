@@ -3,6 +3,7 @@
 namespace weblighter;
 
 define ('WEBLIGHTER_LIB_PATH', __DIR__.'/');
+define ('VIRTUAL_PATH', str_replace('index.php', '', filter_var($_SERVER['SCRIPT_NAME'], FILTER_SANITIZE_STRING)));
 define ('APP_PATH', str_replace('index.php', '', filter_var($_SERVER['SCRIPT_FILENAME'], FILTER_SANITIZE_STRING)));
 
 class weblighter
@@ -264,7 +265,7 @@ class Tplparser
 
   function generateUrl($action)
   {
-    return $this->data['url_prefix'].$action;
+    return VIRTUAL_PATH.$this->data['url_prefix'].$action;
   }
 
   function translate($text)
@@ -317,6 +318,8 @@ class Tplparser
     $lecontent = preg_replace('~\{(?i)ELSE\}~', '<?php } else { ?>', $lecontent);
     // {url(link)}
     $lecontent = preg_replace('~\{(?i)URL\((.*?)\)\}~', '<?php echo $this->generateUrl(\'$1\'); ?>', $lecontent);
+    // {app}
+    $lecontent = preg_replace('~\{(?i)APP}~', '<?php echo VIRTUAL_PATH; ?>', $lecontent);
     // {_Text} => translator
     $lecontent = preg_replace('~\{_(.*?)\}~', '<?php echo $this->translate(\'$1\'); ?>', $lecontent);
     // {a.b}
@@ -335,8 +338,8 @@ class Tplparser
 
     /*
     //Activate theses lines to debug
-    echo $content;
-    eval("?>".$content."<?php return true; ?>");
+    echo $lecontent;
+    eval("?>".$lecontent."<?php return true; ?>");
     */
 
     ob_start();
