@@ -112,7 +112,15 @@ class weblighter
           ':hex}'    => '>[0-9a-f]+)',
           ];
 
-        $lang = \Data_Config::$default_lang;
+        if (!empty($_GET['lang']))
+        {
+          $lang = $_GET['lang'];
+        }
+        else
+        {
+          $lang = \Data_Config::$default_lang;
+        }
+
 
         $found = 0;
         foreach( $routes as $key => $leroute)
@@ -272,7 +280,6 @@ class Tplparser
   {
     return $this->data['t']->_($text);
   }
-
 
   function getFile($file)
   {

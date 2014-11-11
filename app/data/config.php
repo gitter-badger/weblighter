@@ -15,7 +15,7 @@ class Data_Config {
   public static $timezone = 'Europe/Paris';
 
   //Default language
-  public static $default_lang = 'fr_FR';
+  public static $default_lang = 'fr';
 
   //Locales directory
   public static $locale_dir = 'i18n/';
