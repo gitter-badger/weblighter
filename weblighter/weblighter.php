@@ -137,7 +137,7 @@ class weblighter
               $controller = $leroute;
               if (!class_exists($controller, true))
               {
-                throw new \Exception('action '.$action.' not defined!');
+                throw new \Exception('{action_not_defined}: '.$action);
               }
               else {
                 $route = new $controller($lang);
@@ -193,7 +193,7 @@ class weblighter
           $controller = '\Controller_'.ucfirst($action);
           if (!class_exists($controller, true))
           {
-            throw new \Exception('action '.$action.' not defined!');
+            throw new \Exception('{_action_not_defined}: '.$action);
           }
           else
           {
@@ -250,25 +250,43 @@ class Tplparser
   private $file;
   private $data;
 
-  function __construct($tpl, $data = null, $type = 'php')
+  function __construct($tpl = null, $data = null, $type = 'php')
   {
 
+    if (!empty($tpl))
+    {
+      $this->setData($data);
+
+      if (!file_exists($this->file = APP_PATH.'themes/'.\Data_Config::$theme.'/'.$tpl )) $this->file = APP_PATH.$tpl;
+      $this->content = $this->getFile($this->file);
+
+      if ($type == 'php')
+      {
+        $this->content = $this->replaceTags($this->content);
+        $this->content = $this->execute($this->content);
+      }
+      elseif ($type == 'markdown')
+      {
+        $parsedown = new \Vendors_Parsedown_Parsedown();
+        $parsedown->setMarkupEscaped(true);
+        $this->content = $parsedown->text($this->content);
+      }
+    }
+  }
+
+  function getContent()
+  {
+    return $this->content;
+  }
+
+  function setData($data)
+  {
     $this->data = $data;
+  }
 
-    if (!file_exists($this->file = APP_PATH.'themes/'.\Data_Config::$theme.'/'.$tpl )) $this->file = APP_PATH.$tpl;
-    $this->content = $this->getFile($this->file);
-
-    if ($type == 'php')
-    {
-      $this->content = $this->replaceTags($this->content);
-      $this->content = $this->execute($this->content);
-    }
-    elseif ($type == 'markdown')
-    {
-      $parsedown = new \Vendors_Parsedown_Parsedown();
-      $parsedown->setMarkupEscaped(true);
-      $this->content = $parsedown->text($this->content);
-    }
+  function setContent($content)
+  {
+    $this->content = $content;
   }
 
   function generateUrl($action)
@@ -283,7 +301,7 @@ class Tplparser
 
   function getFile($file)
   {
-    if (file_exists($file))
+    if (file_exists($file) && is_file($file))
     {
       return file_get_contents($file);
     }
@@ -392,16 +410,31 @@ class Translator {
     $this->fallbacklocale = \Data_Config::$default_lang;
     $this->localeDir = \Data_Config::$locale_dir;
 
+    //First: Load Weblighter messages
+    if (file_exists($file = WEBLIGHTER_LIB_PATH.$this->localeDir.$alocale.'.json'))
+    {
+      $msg = json_decode(file_get_contents($file), true);
+    }
+    elseif (file_exists($file = WEBLIGHTER_LIB_PATH.$this->localeDir.$this->fallbacklocale.'.json'))
+    {
+      $msg = json_decode(file_get_contents($file), true);
+    }
+
+    //Then: Load Application messages
     if (file_exists($file = APP_PATH.$this->localeDir.$alocale.'.json'))
     {
-      $this->msg = json_decode(file_get_contents($file), true);
+      $msg2 = json_decode(file_get_contents($file), true);
     }
-    elseif (file_exists($file = WEBLIGHTER_LIB_PATH.$this->localeDir.$alocale.'.json'))
+    elseif (file_exists($file = APP_PATH.$this->localeDir.$this->fallbacklocale.'.json'))
     {
-      $this->msg = json_decode(file_get_contents($file), true);
+      $msg2 = json_decode(file_get_contents($file), true);
     }
-    else {
-      throw new \Exception('Locale file not found for: '.$this->locale);
+
+    $this->msg = array_merge($msg, $msg2);
+
+    if (empty($this->msg))
+    {
+      throw new \Exception('No locale file could be found.');
     }
   }
 
@@ -412,13 +445,59 @@ class Translator {
   */
   function _($text)
   {
+    //var_dump($text);
+    if (empty($this->msg)) {
+      //add a log error because it seems the i18n lang file is corrupted here
+      return $text;
+    }
+    //var_dump(array_key_exists($text, $this->msg));
+    //var_dump($this->msg[$text]);
     if (array_key_exists($text, $this->msg))
     {
       return $this->msg[$text];
     }
     else
     {
-      return $text;
+      /*
+       * Could be a text with a variable in it: example: "{action_not_defined}: admin"
+       * In that specific case, we'll try to replace vars in the text and then
+       * translate it.
+       * Finally, if the text is not found, we'll just return it as it was provided
+      */
+      $tr = new Tplparser(null);
+      $tr->setContent($text);
+      $data['url_prefix'] = \Data_Config::$url_prefix;
+      $data['t'] = $this;
+      $tr->setData($data);
+      $tr->setContent($tr->replaceTags($tr->getContent()));
+      $otext = $tr->execute($tr->getContent());
+
+      //return something different if DEBUG is ON and text isn't translated
+      if ($otext == @$this->msg[$text])
+      {
+        return $this->msg[$text];
+      }
+      else
+      {
+        $multiple = preg_match('~\{(\w+)\}~', $text);
+
+        if (\Data_Config::$debug)
+        {
+          if ($multiple)
+          {
+            return $otext;
+          }
+          else
+          {
+            return '<font color="red">I18N: '.$text.'</font>';
+          }
+        }
+        else
+        {
+          return $text;
+        }
+
+      }
     }
   }
 
