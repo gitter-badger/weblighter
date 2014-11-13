@@ -430,11 +430,11 @@ class Translator {
       $msg2 = json_decode(file_get_contents($file), true);
     }
 
-    $this->msg = array_merge($msg, $msg2);
+    $this->msg = @array_merge($msg, $msg2);
 
     if (empty($this->msg))
     {
-      throw new \Exception('No locale file could be found.');
+      throw new \Exception('Locale not found or parse error: '.$alocale);
     }
   }
 
