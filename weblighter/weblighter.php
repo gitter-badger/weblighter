@@ -2,9 +2,17 @@
 
 namespace weblighter;
 
-define ('WEBLIGHTER_LIB_PATH', __DIR__.'/');
-define ('VIRTUAL_PATH', str_replace('index.php', '', filter_var($_SERVER['SCRIPT_NAME'], FILTER_SANITIZE_STRING)));
-define ('APP_PATH', str_replace('index.php', '', filter_var($_SERVER['SCRIPT_FILENAME'], FILTER_SANITIZE_STRING)));
+define('WEBLIGHTER_LIB_PATH', __DIR__.'/');
+$vpath = str_replace('index.php', '', filter_var($_SERVER['SCRIPT_NAME'], FILTER_SANITIZE_STRING));
+if ($vpath == '/')
+{
+  define('VIRTUAL_PATH', '');
+}
+else
+{
+  define('VIRTUAL_PATH', $vpath);
+}
+define('APP_PATH', str_replace('index.php', '', filter_var($_SERVER['SCRIPT_FILENAME'], FILTER_SANITIZE_STRING)));
 
 class weblighter
 {
