@@ -2,23 +2,24 @@
 
 namespace weblighter;
 
-define('WEBLIGHTER_LIB_PATH', __DIR__.'/');
-$vpath = str_replace('index.php', '', filter_var($_SERVER['SCRIPT_NAME'], FILTER_SANITIZE_STRING));
-if ($vpath == '/')
-{
-  define('VIRTUAL_PATH', '');
-}
-else
-{
-  define('VIRTUAL_PATH', $vpath);
-}
-define('APP_PATH', str_replace('index.php', '', filter_var($_SERVER['SCRIPT_FILENAME'], FILTER_SANITIZE_STRING)));
-
 class weblighter
 {
 
   function __construct($routes = [])
   {
+
+    //Some Constants to be used everywhere
+    define('WEBLIGHTER_LIB_PATH', __DIR__.'/');
+    $vpath = str_replace('index.php', '', filter_var($_SERVER['SCRIPT_NAME'], FILTER_SANITIZE_STRING));
+    if ($vpath == '/')
+    {
+      define('VIRTUAL_PATH', '');
+    }
+    else
+    {
+      define('VIRTUAL_PATH', $vpath);
+    }
+    define('APP_PATH', str_replace('index.php', '', filter_var($_SERVER['SCRIPT_FILENAME'], FILTER_SANITIZE_STRING)));
 
     try
     {
@@ -69,6 +70,26 @@ class weblighter
       if (empty($action))
       {
         $action = 'home';
+      }
+
+      //DEFAULT Lang?
+      session_start();
+
+      if (empty($_SESSION['user']['lang']))
+      {
+        $_SESSION['langs'] = $this->geti18nlocales();
+
+        if (\Data_Config::$default_lang == 'user')
+        {
+          //Default language is set to "user", it means we'll display
+          //the page for the top X preferred language in the user's browser.
+          $_SESSION['user']['lang'] = $this->getPreferredUserLanguage();
+        }
+        else
+        {
+          //Set the default language as the one defined in the config.
+          $_SESSION['user']['lang'] = \Data_Config::$default_lang;
+        }
       }
 
       /*
@@ -123,10 +144,11 @@ class weblighter
         if (!empty($_GET['lang']))
         {
           $lang = $_GET['lang'];
+          $_SESSION['user']['lang'] = $_GET['lang'];
         }
         else
         {
-          $lang = \Data_Config::$default_lang;
+          $lang = $_SESSION['user']['lang'];
         }
 
 
@@ -217,6 +239,59 @@ class weblighter
     }
   }
 
+  function getPreferredUserLanguage()
+  {
+    $userlangs = explode(',', trim($_SERVER['HTTP_ACCEPT_LANGUAGE']));
+    foreach ($userlangs as $lang)
+    {
+      if (preg_match('/(\*|[a-zA-Z0-9]{1,8}(?:-[a-zA-Z0-9]{1,8})*)(?:\s*;\s*q\s*=\s*(0(?:\.\d{0,3})|1(?:\.0{0,3})))?/', trim($lang), $match))
+      {
+        if (!isset($match[2]))
+        {
+            $match[2] = '1.0';
+        } else {
+            $match[2] = (string) floatval($match[2]);
+        }
+        if (!isset($languages[$match[2]])) {
+            $languages[$match[2]] = array();
+        }
+        $languages[$match[2]][] = strtolower($match[1]);
+      }
+    }
+    krsort($languages);
+
+    $avail_langs = $this->geti18nlocales();
+
+    foreach ($languages as $lang)
+    {
+
+      if (in_array($lang[0], $avail_langs))
+      {
+        return $lang[0];
+      }
+    }
+
+    //no preferred language? return the 'en' or the first one available
+    if (in_array('en', $avail_langs))
+    {
+      return 'en';
+    }
+    return $avail_langs[0];
+  }
+
+  function geti18nlocales()
+  {
+    $locales = glob(APP_PATH.'i18n/*.json');
+    $localenames = array();
+    foreach ($locales as $locale)
+    {
+      $loc = str_replace(APP_PATH.'i18n/', '', $locale);
+      $loc = str_replace('.json', '', $loc);
+      array_push($localenames, $loc);
+    }
+    return $localenames;
+  }
+
   function display()
   {
     return $this->content;
@@ -299,7 +374,22 @@ class Tplparser
 
   function generateUrl($action)
   {
+    if (empty($action))
+    {
+      $action = $this->data['action'];
+    }
     return VIRTUAL_PATH.$this->data['url_prefix'].$action;
+  }
+
+  function formatDate($date)
+  {
+    if (empty($date)) return '';
+
+    $ldate = new \DateTime($date);
+
+    $dateformat = $this->data['t']->_('date_format');
+    if (empty($dateformat)) $dateformat = "Y-m-d";
+    return date_format($ldate, $dateformat);
   }
 
   function translate($text)
@@ -332,9 +422,11 @@ class Tplparser
     // {IF a ! empty}
 
     // {IF a.b = {c}}
-    $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) = \{(\w+)\}\}~', '<?php if ((isset(\$$1) && is_object(\$$1) && \$$1->$2 == $this->data[\'$3\']) or (isset(\$$1) && is_array(\$$1) && \$$1[\'$2\'] == $this->data[\'$3\']) or (isset($this->data[\'$1\']) && is_object($this->data[\'$1\']) && $this->data[\'$1\']->$2 == $this->data[\'$3\']) or (isset($this->data[\'$1\']) && is_array($this->data[\'$1\']) && $this->data[\'$1\'][\'$2\'] == $this->data[\'$3\'])) { ?>', $lecontent);
+    $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) (=|(?i)eq) \{(\w+)\}\}~', '<?php if ((isset(\$$1) && is_object(\$$1) && \$$1->$2 == $this->data[\'$4\']) or (isset(\$$1) && is_array(\$$1) && \$$1[\'$2\'] == $this->data[\'$4\']) or (isset($this->data[\'$1\']) && is_object($this->data[\'$1\']) && $this->data[\'$1\']->$2 == $this->data[\'$4\']) or (isset($this->data[\'$1\']) && is_array($this->data[\'$1\']) && $this->data[\'$1\'][\'$2\'] == $this->data[\'$4\'])) { ?>', $lecontent);
     // {IF a = {c}}
-    $lecontent = preg_replace('~\{(?i)IF (\w+) = \{(\w+)\}\}~', '<?php if ((isset(\$$1) && isset(\$$2) && \$$1 == \$$2) or (isset(\$$1) && isset($this->data[\'$2\']) && \$$1 == $this->data[\'$2\'])) { ?>', $lecontent);
+    $lecontent = preg_replace('~\{(?i)IF (\w+) (=|(?i)eq) \{(\w+)\}\}~', '<?php if ((isset(\$$1) && isset(\$$3) && \$$1 == \$$3) or (isset(\$$1) && isset($this->data[\'$3\']) && \$$1 == $this->data[\'$3\'])) { ?>', $lecontent);
+    // {IF {a} = {c}}
+    $lecontent = preg_replace('~\{(?i)IF \{(\w+)\} (=|(?i)eq) \{(\w+)\}\}~', '<?php if ((isset(\$$1) && isset(\$$3) && \$$1 == \$$3) or (isset(\$$1) && isset($this->data[\'$3\']) && \$$1 == $this->data[\'$3\']) or (isset($this->data[\'$1\']) && isset($this->data[\'$3\']) && $this->data[\'$1\'] == $this->data[\'$3\']) or (isset(\$$3) && isset($this->data[\'$1\']) && \$$3 == $this->data[\'$1\'])) { ?>', $lecontent);
     // {IF a.b = true} (or false)
     $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) (=|(?i)eq) (?i)(TRUE|FALSE)\}~', '<?php if ((is_object(\$$1) && \$$1->$2 == $3) or (is_array(\$$1) && \$$1[\'$2\'] == $3)) { ?>', $lecontent);
     // {IF a.b = c}
@@ -349,12 +441,18 @@ class Tplparser
     $lecontent = preg_replace('~\{(?i)IF (\w+) ((?i)cs) \'(\w+)\'\}~', '<?php if ((isset(\$$1) && (strpos(\$$1, \'$3\') !== false)) or (isset($this->data[\'$1\']) && (strpos($this->data[\'$1\'], \'$3\') !== false))) { ?>', $lecontent);
     // {ELSE}
     $lecontent = preg_replace('~\{(?i)ELSE\}~', '<?php } else { ?>', $lecontent);
-    // {url(link)}
+    // {url(link)} if {url()}, will go to current action
     $lecontent = preg_replace('~\{(?i)URL\((.*?)\)\}~', '<?php echo $this->generateUrl(\'$1\'); ?>', $lecontent);
     // {app}
     $lecontent = preg_replace('~\{(?i)APP}~', '<?php echo VIRTUAL_PATH; ?>', $lecontent);
+    // {_{var}} => translator
+    $lecontent = preg_replace('~\{_\{(\w+)\}\}~', '<?php if (isset(\$$1)) {echo $this->translate(\$$1);} elseif (isset($this->data[\'$1\'])) {echo $this->translate($this->data[\'$1\']);} ?>', $lecontent);
     // {_Text} => translator
     $lecontent = preg_replace('~\{_(.*?)\}~', '<?php echo $this->translate(\'$1\'); ?>', $lecontent);
+    // {date(a.b)}
+    $lecontent = preg_replace('~\{(?i)DATE\((\w+)\.(\w+)\)\}~', '<?php if (is_object(\$$1)) { echo $this->formatDate(\$$1->$2); } elseif (is_array(\$$1)) { echo $this->formatDate(\$$1[\'$2\']); } elseif (is_object($this->data[\'$1\'])) { echo $this->formatDate($this->data[\'$1\']->$2); } elseif (is_array($this->data[\'$1\'])) { echo $this->formatDate($this->data[\'$1\'][\'$2\']); } ?>', $lecontent);
+    // {date(a)}
+    $lecontent = preg_replace('~\{(?i)DATE\((\w+)\)\}~', '<?php echo $this->formatDate(\$$1); ?>', $lecontent);
     // {a.b}
     $lecontent = preg_replace('~\{(\w+)\.(\w+)\}~', '<?php if (is_object(\$$1)) { echo \$$1->$2; } elseif (is_array(\$$1)) { echo \$$1[\'$2\']; } elseif (is_object($this->data[\'$1\'])) { echo $this->data[\'$1\']->$2; } elseif (is_array($this->data[\'$1\'])) { echo $this->data[\'$1\'][\'$2\']; } ?>', $lecontent);
     // {a}
@@ -462,22 +560,25 @@ class Translator {
     //var_dump($this->msg[$text]);
     if (array_key_exists($text, $this->msg))
     {
-      return $this->msg[$text];
-    }
-    else
-    {
-      /*
-       * Could be a text with a variable in it: example: "{action_not_defined}: admin"
-       * In that specific case, we'll try to replace vars in the text and then
-       * translate it.
-       * Finally, if the text is not found, we'll just return it as it was provided
-      */
+      $ltext = $this->msg[$text];
+
       $tr = new Tplparser(null);
-      $tr->setContent($text);
       $data['url_prefix'] = \Data_Config::$url_prefix;
       $data['t'] = $this;
       $tr->setData($data);
-      $tr->setContent($tr->replaceTags($tr->getContent()));
+      $tr->setContent($tr->replaceTags($ltext));
+      $ltext = $tr->execute($tr->getContent());
+
+      return $ltext;
+
+    }
+    else
+    {
+      $tr = new Tplparser(null);
+      $data['url_prefix'] = \Data_Config::$url_prefix;
+      $data['t'] = $this;
+      $tr->setData($data);
+      $tr->setContent($tr->replaceTags($text));
       $otext = $tr->execute($tr->getContent());
 
       //return something different if DEBUG is ON and text isn't translated

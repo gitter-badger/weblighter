@@ -5,17 +5,14 @@ class Data_Config {
   //Site title
   public static $site_title = 'Weblighter';
 
-  //Site slogan
-  public static $site_slogan = 'Weblighter default website';
-
   //Active theme
   public static $theme = 'default';
 
   //Default timezone
   public static $timezone = 'Europe/Paris';
 
-  //Default language
-  public static $default_lang = 'en_US';
+  //Default language (set it to 'user' to display in preferred user language)
+  public static $default_lang = 'user';
 
   //Locales directory
   public static $locale_dir = 'i18n/';
@@ -32,4 +29,14 @@ class Data_Config {
 
   //Will error be output?
   public static $debug = true;
+
+  //Databases to connect to
+  /*public static $db = [
+    [ 'name' => 'development',
+      'type'  => 'mysql',
+      'db'    => 'DB_NAME',
+      'user'  => 'DB_USERNAME',
+      'pass'  => 'DB_PASSWORD'
+    ]
+  ];*/
 }

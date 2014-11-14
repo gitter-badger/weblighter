@@ -18,6 +18,10 @@ abstract class Controller_Default
     }
     $this->data['url_prefix'] = \Data_Config::$url_prefix;
 
+    //Langs and current language
+    $this->data['langs'] = $_SESSION['langs'];
+    $this->data['lang']  = $_SESSION['user']['lang'];
+
     //Default Translator or the one set in the route
     if (!empty(func_num_args()))
     {
@@ -26,7 +30,7 @@ abstract class Controller_Default
     }
     else
     {
-      $this->prepareTranslator(\Data_Config::$default_lang);
+      $this->prepareTranslator($_SESSION['user']['lang']);
     }
 
   }
@@ -39,7 +43,7 @@ abstract class Controller_Default
     }
     else
     {
-      $this->translator = new weblighter\Translator(\Data_Config::$default_lang);
+      $this->translator = new weblighter\Translator($_SESSION['user']['lang']);
 
     }
     $this->data['t'] = $this->translator;

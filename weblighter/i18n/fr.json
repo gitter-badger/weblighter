@@ -1,4 +1,8 @@
 {
+  "Langs": "Langues",
+  "en": "English",
+  "fr": "Français",
+  "date_format": "d/m/Y",
   "exception_happened": "Une erreur s'est produite",
   "action_not_defined": "L'action n'est pas définie"
 }
