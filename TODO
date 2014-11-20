@@ -2,3 +2,5 @@
 + Journal
 + Session handler (to save the lang, etc.)
 + Get the user default lang
+
++ Disallow autoload of controller when route isn't found (do=default or do=exception)
