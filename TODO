@@ -1,6 +1,4 @@
-+ Database loader
-+ Journal
-+ Session handler (to save the lang, etc.)
-+ Get the user default lang
-
-+ Disallow autoload of controller when route isn't found (do=default or do=exception)
++ Database class => make work the sqlite dbs (only mysql implemented for now)
++ Journal class ?
++ Session handler class? (to save more than the user lang, etc.)
++ Disallow autoload of controllers. Routes have to be defined orelse => RAGEKICKBAN (also test do=default & do=exception)
