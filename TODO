@@ -1,4 +1,3 @@
 + Database class => make work the sqlite dbs (only mysql implemented for now)
 + Journal class ?
 + Session handler class? (to save more than the user lang, etc.)
-+ Disallow autoload of controllers. Routes have to be defined orelse => RAGEKICKBAN (also test do=default & do=exception)
