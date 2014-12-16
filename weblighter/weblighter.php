@@ -2,116 +2,84 @@
 
 namespace weblighter;
 
-class weblighter
-{
+class weblighter {
 
-  function __construct($routes = [])
-  {
+  function __construct($routes = []) {
 
     //Some Constants to be used everywhere
-    define('WEBLIGHTER_LIB_PATH', __DIR__.'/');
+    define('WEBLIGHTER_LIB_PATH', __DIR__ . '/');
     $vpath = str_replace('index.php', '', filter_var($_SERVER['SCRIPT_NAME'], FILTER_SANITIZE_STRING));
-    if ($vpath == '/')
-    {
+    if ($vpath == '/') {
       define('VIRTUAL_PATH', '');
-    }
-    else
-    {
+    } else {
       define('VIRTUAL_PATH', $vpath);
     }
     define('APP_PATH', str_replace('index.php', '', filter_var($_SERVER['SCRIPT_FILENAME'], FILTER_SANITIZE_STRING)));
 
-    try
-    {
+    try {
 
       /*
        * This autoloader will first try to load app files
        * If not found, it will load the same default files but from weblighter folder
        * For example if app config file is missing it will use the default one
-      */
-      spl_autoload_register(function ($class)
-      {
-        if (file_exists($filepath = APP_PATH.str_replace('_', '/', strtolower($class)).'.php'))
-        {
+       */
+      spl_autoload_register(function ($class) {
+        if (file_exists($filepath = APP_PATH . str_replace('_', '/', strtolower($class)) . '.php')) {
           require_once $filepath;
-        }
-        else
-        {
-          if (file_exists($filepath2 = WEBLIGHTER_LIB_PATH.str_replace('_', '/', strtolower($class)).'.php'))
-          {
+        } else {
+          if (file_exists($filepath2 = WEBLIGHTER_LIB_PATH . str_replace('_', '/', strtolower($class)) . '.php')) {
             require_once $filepath2;
           }
         }
       });
 
       // DEBUG mode set in app config file
-      if (!empty(\Data_Config::$debug))
-      {
+      if (!empty(\Data_Config::$debug)) {
         error_reporting(-1);
         ini_set('display_errors', 1);
       }
 
       // Default timezone
-      if (!empty(\Data_Config::$timezone))
-      {
+      if (!empty(\Data_Config::$timezone)) {
         if (in_array(\Data_Config::$timezone, timezone_identifiers_list()))
           date_default_timezone_set(\Data_Config::$timezone);
       }
 
       // WHAT is the current user action ?
-      if (empty(\Data_Config::$url_param))
-      {
-          throw new \Exception('Configuration problem in weblighter url_param missing !');
+      if (empty(\Data_Config::$url_param)) {
+        throw new \Exception('Configuration problem in weblighter url_param missing !');
       }
-      if (!empty($_GET[\Data_Config::$url_param]))
-      {
+      if (!empty($_GET[\Data_Config::$url_param])) {
         $action = filter_var($_GET[\Data_Config::$url_param], FILTER_SANITIZE_STRING);
       }
-      if (empty($action))
-      {
+      if (empty($action)) {
         $action = 'home';
       }
 
       //DEFAULT Lang?
       session_start();
 
-      if (empty($_SESSION['user']['lang']))
-      {
+      if (empty($_SESSION['user']['lang'])) {
         $_SESSION['langs'] = $this->geti18nlocales();
 
-        if (\Data_Config::$default_lang == 'user')
-        {
+        if (\Data_Config::$default_lang == 'user') {
           //Default language is set to "user", it means we'll display
           //the page for the top X preferred language in the user's browser.
           $_SESSION['user']['lang'] = $this->getPreferredUserLanguage();
-        }
-        else
-        {
+        } else {
           //Set the default language as the one defined in the config.
           $_SESSION['user']['lang'] = \Data_Config::$default_lang;
         }
       }
 
       /*
-       * Here is a default router if no routes are defined in the app index.php file
-       * Basically, depending the user action, we can "try" to load a controller that may be the right one
-       * Example: user goes on ?action=profile, no such route is defined in app index file
-       * We'll first check if Controller_Profile class file exists, if not we return an error
-       * If we found it, we load this route pretending it's the right one.
-      */
-      if (empty($routes))
-      {
-        $controller = '\Controller_'.ucfirst($action);
-        if (!class_exists($controller, true))
-        {
-          throw new \Exception('action '.$action.' not defined!');
-        }
-        else
-        {
-          $route = new $controller();
-          $this->content = $route->display();
-        }
+       * no routes are defined in the app index.php file
+       * we return an error
+       */
+      if (empty($routes)) {
+        throw new \Exception('action ' . $action . ' not defined!');
       }
+
       /* Here is the router when routes are defined.
        * It is very small but powerful as it can handle named parameters
        * here is an example:
@@ -126,134 +94,98 @@ class weblighter
        *  post/2012/10/25/1-welcome_on_my_blog
        *  post/2014/09/06/1245-why_do_i_code_so_good
        * Enjoy !
-      */
-      else
-      {
-        //$key => $leroute
-        //  $leroute['ctrl']    $leroute['func']    $leroute['method'] (get or post, both if empty)
+       */
 
-        $vars = [
-          '/'        => '\/',
-          '{'        => '(?<',
+      //$key => $leroute
+      //  $leroute['ctrl']    $leroute['func']    $leroute['method'] (get or post, both if empty)
+
+      $vars = [
+          '/' => '\/',
+          '{' => '(?<',
           ':string}' => '>[a-zA-Z]+)',
           ':number}' => '>[0-9]+)',
-          ':alpha}'  => '>[a-zA-Z0-9-_]+)',
-          ':hex}'    => '>[0-9a-f]+)',
-          ];
+          ':alpha}' => '>[a-zA-Z0-9-_]+)',
+          ':hex}' => '>[0-9a-f]+)',
+      ];
 
-        if (!empty($_GET['lang']))
-        {
-          $lang = $_GET['lang'];
-          $_SESSION['user']['lang'] = $_GET['lang'];
-        }
-        else
-        {
-          $lang = $_SESSION['user']['lang'];
-        }
+      if (!empty($_GET['lang'])) {
+        $lang = $_GET['lang'];
+        $_SESSION['user']['lang'] = $_GET['lang'];
+      } else {
+        $lang = $_SESSION['user']['lang'];
+      }
 
 
-        $found = 0;
-        foreach( $routes as $key => $leroute)
-        {
-          $pattern = strtr($key, $vars);
-          $params = [];
-          if (preg_match('#^/?'.$pattern.'/?$#', $action, $params))
-          {
-            $found = 1;
+      $found = 0;
+      foreach ($routes as $key => $leroute) {
+        $pattern = strtr($key, $vars);
+        $params = [];
+        if (preg_match('#^/?' . $pattern . '/?$#', $action, $params)) {
+          $found = 1;
 
-            //route is just the controller (default method is display)
-            if (is_string($leroute))
-            {
-              $controller = $leroute;
-              if (!class_exists($controller, true))
-              {
-                throw new \Exception('{action_not_defined}: '.$action);
-              }
-              else {
-                $route = new $controller($lang);
-                $method = "display";
-              }
+          //route is just the controller (default method is display)
+          if (is_string($leroute)) {
+            $controller = $leroute;
+            if (!class_exists($controller, true)) {
+              throw new \Exception('{action_not_defined}: ' . $action);
+            } else {
+              $route = new $controller($lang);
+              $method = "display";
             }
-            elseif (is_array($leroute))
-            {
-              if (!empty($_GET['lang']))
-              {
-                $route = new $leroute['ctrl']($_GET['lang']);
-              }
-              else
-              {
-                if (!empty($leroute['params']['lang']))
-                {
-                  $route = new $leroute['ctrl']($leroute['params']['lang']);
-                }
-                else
-                {
-                  $route = new $leroute['ctrl']($lang);
-                }
-              }
-
-              if (!empty($leroute['func']))
-                $method = $leroute['func'];
-              else
-                $method = "display";
-            }
-
-            if (!empty($leroute['params']))
-            {
-              if (is_array($leroute['params']))
-              {
-                  $params = array_merge($leroute['params'], $params, @$_GET);
+          } elseif (is_array($leroute)) {
+            if (!empty($_GET['lang'])) {
+              $route = new $leroute['ctrl']($_GET['lang']);
+            } else {
+              if (!empty($leroute['params']['lang'])) {
+                $route = new $leroute['ctrl']($leroute['params']['lang']);
+              } else {
+                $route = new $leroute['ctrl']($lang);
               }
             }
 
-            if (!empty($params))
-              $this->content = $route->$method($params);
+            if (!empty($leroute['func']))
+              $method = $leroute['func'];
             else
-              $this->content = $route->$method();
-
-            break;
+              $method = "display";
           }
-        }
 
-        if (empty($found))
-        {
-          /* Routes were defined, but for this specific route, we didn't find a match
-           * finally, we'll try to guess that route ;)
-          */
-          $controller = '\Controller_'.ucfirst($action);
-          if (!class_exists($controller, true))
-          {
-            throw new \Exception('{_action_not_defined}: '.$action);
+          if (!empty($leroute['params'])) {
+            if (is_array($leroute['params'])) {
+              $params = array_merge($leroute['params'], $params, @$_GET);
+            }
           }
+
+          if (!empty($params))
+            $this->content = $route->$method($params);
           else
-          {
-            $route = new $controller();
-            $this->content = $route->display();
-          }
+            $this->content = $route->$method();
+
+          break;
         }
       }
-    }
-    catch(\Exception $e)
-    {
+
+      if (empty($found)) {
+        /* Routes were defined, but for this specific route, we didn't find a match
+         * so let's output an error
+         */
+        throw new \Exception('{_action_not_defined}: ' . $action);
+      }
+    } catch (\Exception $e) {
       $this->content = (new \Controller_Exception($e->getMessage()))->display();
     }
   }
 
-  function getPreferredUserLanguage()
-  {
+  function getPreferredUserLanguage() {
     $userlangs = explode(',', trim($_SERVER['HTTP_ACCEPT_LANGUAGE']));
-    foreach ($userlangs as $lang)
-    {
-      if (preg_match('/(\*|[a-zA-Z0-9]{1,8}(?:-[a-zA-Z0-9]{1,8})*)(?:\s*;\s*q\s*=\s*(0(?:\.\d{0,3})|1(?:\.0{0,3})))?/', trim($lang), $match))
-      {
-        if (!isset($match[2]))
-        {
-            $match[2] = '1.0';
+    foreach ($userlangs as $lang) {
+      if (preg_match('/(\*|[a-zA-Z0-9]{1,8}(?:-[a-zA-Z0-9]{1,8})*)(?:\s*;\s*q\s*=\s*(0(?:\.\d{0,3})|1(?:\.0{0,3})))?/', trim($lang), $match)) {
+        if (!isset($match[2])) {
+          $match[2] = '1.0';
         } else {
-            $match[2] = (string) floatval($match[2]);
+          $match[2] = (string) floatval($match[2]);
         }
         if (!isset($languages[$match[2]])) {
-            $languages[$match[2]] = array();
+          $languages[$match[2]] = array();
         }
         $languages[$match[2]][] = strtolower($match[1]);
       }
@@ -262,94 +194,79 @@ class weblighter
 
     $avail_langs = $this->geti18nlocales();
 
-    foreach ($languages as $lang)
-    {
+    foreach ($languages as $lang) {
 
-      if (in_array($lang[0], $avail_langs))
-      {
+      if (in_array($lang[0], $avail_langs)) {
         return $lang[0];
       }
     }
 
     //no preferred language? return the 'en' or the first one available
-    if (in_array('en', $avail_langs))
-    {
+    if (in_array('en', $avail_langs)) {
       return 'en';
     }
     return $avail_langs[0];
   }
 
-  function geti18nlocales()
-  {
-    $locales = glob(APP_PATH.'i18n/*.json');
+  function geti18nlocales() {
+    $locales = glob(APP_PATH . 'i18n/*.json');
     $localenames = array();
-    foreach ($locales as $locale)
-    {
-      $loc = str_replace(APP_PATH.'i18n/', '', $locale);
+    foreach ($locales as $locale) {
+      $loc = str_replace(APP_PATH . 'i18n/', '', $locale);
       $loc = str_replace('.json', '', $loc);
       array_push($localenames, $loc);
     }
     return $localenames;
   }
 
-  function display()
-  {
+  function display() {
     return $this->content;
   }
 
   private $content;
+
 }
 
-
-
-
-
-
-
 /*
-* The template parser replace some tags
-* like: {var} to be replaced with $data['var'] or
-* {var.subvar} if var is an array or an object property
-* Of course, i also made {loop var} to loop on an array :D
-* You can even make {loop var as toto}
-* small concrete example
-*
-*   {loop posts in post}
-*   <article>
-*     <h1>{post.title}</h1>
-*     <p class="date">posted by {post.author} on {post.date}</p>
-*     <p>{post.content}</p>
-*   </article>
-*   {/loop}
+ * The template parser replace some tags
+ * like: {var} to be replaced with $data['var'] or
+ * {var.subvar} if var is an array or an object property
+ * Of course, i also made {loop var} to loop on an array :D
+ * You can even make {loop var as toto}
+ * small concrete example
+ *
+ *   {loop posts in post}
+ *   <article>
+ *     <h1>{post.title}</h1>
+ *     <p class="date">posted by {post.author} on {post.date}</p>
+ *     <p>{post.content}</p>
+ *   </article>
+ *   {/loop}
 
-* Type argument allows to define the type of content to be loaded
-* php will be parsed and execute
-* markdown will be parsed and rendered
-*/
+ * Type argument allows to define the type of content to be loaded
+ * php will be parsed and execute
+ * markdown will be parsed and rendered
+ */
 
-class Tplparser
-{
+class Tplparser {
+
   private $content;
   private $file;
   private $data;
 
-  function __construct($tpl = null, $data = null, $type = 'php')
-  {
+  function __construct($tpl = null, $data = null, $type = 'php') {
 
-    if (!empty($tpl))
-    {
+    if (!empty($tpl)) {
       $this->setData($data);
 
-      if (!file_exists($this->file = APP_PATH.'themes/'.\Data_Config::$theme.'/'.$tpl )) $this->file = APP_PATH.$tpl;
+      if (!file_exists($this->file = APP_PATH . 'themes/' . \Data_Config::$theme . '/' . $tpl))
+        $this->file = APP_PATH . $tpl;
       $this->content = $this->getFile($this->file);
 
-      if ($type == 'php')
-      {
+      if ($type == 'php') {
         $this->content = $this->replaceTags($this->content);
         $this->content = $this->execute($this->content);
-      }
-      elseif ($type == 'markdown')
-      {
+      } elseif ($type == 'markdown') {
         $parsedown = new \Vendors_Parsedown_Parsedown();
         $parsedown->setMarkupEscaped(true);
         $this->content = $parsedown->text($this->content);
@@ -357,60 +274,50 @@ class Tplparser
     }
   }
 
-  function getContent()
-  {
+  function getContent() {
     return $this->content;
   }
 
-  function setData($data)
-  {
+  function setData($data) {
     $this->data = $data;
   }
 
-  function setContent($content)
-  {
+  function setContent($content) {
     $this->content = $content;
   }
 
-  function generateUrl($action)
-  {
-    if (empty($action))
-    {
+  function generateUrl($action) {
+    if (empty($action)) {
       $action = $this->data['action'];
     }
-    return VIRTUAL_PATH.$this->data['url_prefix'].$action;
+    return VIRTUAL_PATH . $this->data['url_prefix'] . $action;
   }
 
-  function formatDate($date)
-  {
-    if (empty($date)) return '';
+  function formatDate($date) {
+    if (empty($date))
+      return '';
 
     $ldate = new \DateTime($date);
 
     $dateformat = $this->data['t']->_('date_format');
-    if (empty($dateformat)) $dateformat = "Y-m-d";
+    if (empty($dateformat))
+      $dateformat = "Y-m-d";
     return date_format($ldate, $dateformat);
   }
 
-  function translate($text)
-  {
+  function translate($text) {
     return $this->data['t']->_($text);
   }
 
-  function getFile($file)
-  {
-    if (file_exists($file) && is_file($file))
-    {
+  function getFile($file) {
+    if (file_exists($file) && is_file($file)) {
       return file_get_contents($file);
-    }
-    else
-    {
-      throw new \Exception('File not found: '.$file);
+    } else {
+      throw new \Exception('File not found: ' . $file);
     }
   }
 
-  function replaceTags($lecontent)
-  {
+  function replaceTags($lecontent) {
     // {/LOOP} ou {/IF}
     $lecontent = preg_replace('~\{/(?i)(LOOP|IF)\}~', '<?php } ?>', $lecontent);
     // {IF a = true} (or false)
@@ -420,7 +327,6 @@ class Tplparser
     // {IF a.b ! empty}
     $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) (!|(?i)not) ((?i)empty)\}~', '<?php if ((is_object(\$$1) and !empty(\$$1->$2)) or (is_array(\$$1) && !empty(\$$1[\'$2\'])) or (is_object($this->data[\'$1\']) && !empty($this->data[\'$1\']->$2)) or (is_array($this->data[\'$1\']) && !empty($this->data[\'$1\'][\'$2\']))) { ?>', $lecontent);
     // {IF a ! empty}
-
     // {IF a.b = {c}}
     $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) (=|(?i)eq) \{(\w+)\}\}~', '<?php if ((isset(\$$1) && is_object(\$$1) && \$$1->$2 == $this->data[\'$4\']) or (isset(\$$1) && is_array(\$$1) && \$$1[\'$2\'] == $this->data[\'$4\']) or (isset($this->data[\'$1\']) && is_object($this->data[\'$1\']) && $this->data[\'$1\']->$2 == $this->data[\'$4\']) or (isset($this->data[\'$1\']) && is_array($this->data[\'$1\']) && $this->data[\'$1\'][\'$2\'] == $this->data[\'$4\'])) { ?>', $lecontent);
     // {IF a = {c}}
@@ -463,25 +369,21 @@ class Tplparser
     return $lecontent;
   }
 
-  function execute($lecontent)
-  {
+  function execute($lecontent) {
     $result = null;
 
     /*
-    //Activate theses lines to debug
-    echo $lecontent;
-    eval("?>".$lecontent."<?php return true; ?>");
-    */
+      //Activate theses lines to debug
+      echo $lecontent;
+      eval("?>".$lecontent."<?php return true; ?>");
+     */
 
     ob_start();
-    $eval = @eval("?>".$lecontent."<?php return true; ?>");
+    $eval = @eval("?>" . $lecontent . "<?php return true; ?>");
 
-    if ($eval !== true)
-    {
-      $result = 'ERROR IN template: '.$this->file.'<br/>';
-    }
-    else
-    {
+    if ($eval !== true) {
+      $result = 'ERROR IN template: ' . $this->file . '<br/>';
+    } else {
       $result = ob_get_contents();
     }
     ob_end_clean();
@@ -489,58 +391,45 @@ class Tplparser
     return $result;
   }
 
-  function clearData()
-  {
+  function clearData() {
     $this->data = null;
   }
 
-  function display()
-  {
+  function display() {
     return $this->content;
   }
+
 }
-
-
-
-
-
 
 /*
  * Translator is the internationalization class of weblighter
-*/
+ */
+
 class Translator {
 
-  function __construct($alocale)
-  {
+  function __construct($alocale) {
     $this->locale = $alocale;
     $this->fallbacklocale = \Data_Config::$default_lang;
     $this->localeDir = \Data_Config::$locale_dir;
 
     //First: Load Weblighter messages
-    if (file_exists($file = WEBLIGHTER_LIB_PATH.$this->localeDir.$alocale.'.json'))
-    {
+    if (file_exists($file = WEBLIGHTER_LIB_PATH . $this->localeDir . $alocale . '.json')) {
       $msg = json_decode(file_get_contents($file), true);
-    }
-    elseif (file_exists($file = WEBLIGHTER_LIB_PATH.$this->localeDir.$this->fallbacklocale.'.json'))
-    {
+    } elseif (file_exists($file = WEBLIGHTER_LIB_PATH . $this->localeDir . $this->fallbacklocale . '.json')) {
       $msg = json_decode(file_get_contents($file), true);
     }
 
     //Then: Load Application messages
-    if (file_exists($file = APP_PATH.$this->localeDir.$alocale.'.json'))
-    {
+    if (file_exists($file = APP_PATH . $this->localeDir . $alocale . '.json')) {
       $msg2 = json_decode(file_get_contents($file), true);
-    }
-    elseif (file_exists($file = APP_PATH.$this->localeDir.$this->fallbacklocale.'.json'))
-    {
+    } elseif (file_exists($file = APP_PATH . $this->localeDir . $this->fallbacklocale . '.json')) {
       $msg2 = json_decode(file_get_contents($file), true);
     }
 
     $this->msg = @array_merge($msg, $msg2);
 
-    if (empty($this->msg))
-    {
-      throw new \Exception('Locale not found or parse error: '.$alocale);
+    if (empty($this->msg)) {
+      throw new \Exception('Locale not found or parse error: ' . $alocale);
     }
   }
 
@@ -548,9 +437,9 @@ class Translator {
    * The function _ will translate a string based on its key
    * If the translation isn't found, it will return the key itself,
    * and will add an exception in the log
-  */
-  function _($text)
-  {
+   */
+
+  function _($text) {
     //var_dump($text);
     if (empty($this->msg)) {
       //add a log error because it seems the i18n lang file is corrupted here
@@ -558,8 +447,7 @@ class Translator {
     }
     //var_dump(array_key_exists($text, $this->msg));
     //var_dump($this->msg[$text]);
-    if (array_key_exists($text, $this->msg))
-    {
+    if (array_key_exists($text, $this->msg)) {
       $ltext = $this->msg[$text];
 
       $tr = new Tplparser(null);
@@ -570,10 +458,7 @@ class Translator {
       $ltext = $tr->execute($tr->getContent());
 
       return $ltext;
-
-    }
-    else
-    {
+    } else {
       $tr = new Tplparser(null);
       $data['url_prefix'] = \Data_Config::$url_prefix;
       $data['t'] = $this;
@@ -582,38 +467,26 @@ class Translator {
       $otext = $tr->execute($tr->getContent());
 
       //return something different if DEBUG is ON and text isn't translated
-      if ($otext == @$this->msg[$text])
-      {
+      if ($otext == @$this->msg[$text]) {
         return $this->msg[$text];
-      }
-      else
-      {
+      } else {
         $multiple = preg_match('~\{(\w+)\}~', $text);
 
-        if (\Data_Config::$debug)
-        {
-          if ($multiple)
-          {
+        if (\Data_Config::$debug) {
+          if ($multiple) {
             return $otext;
+          } else {
+            return '<font color="red">I18N: ' . $text . '</font>';
           }
-          else
-          {
-            return '<font color="red">I18N: '.$text.'</font>';
-          }
-        }
-        else
-        {
+        } else {
           return $text;
         }
-
       }
     }
   }
 
   protected $locale;
-
   protected $msg;
-
   protected $fallbacklocale;
 
 }

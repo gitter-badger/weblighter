@@ -18,8 +18,12 @@ class Controller_Exception
       $this->data['action'] = @$_GET['action'];
       $this->data['site_slogan'] = Data_Config::$site_slogan;
       $this->data['page_title'] = 'Erreur';
-      $this->data['url_prefix'] = \Data_Config::$url_prefix;
-      $this->data['exception'] = $this->message;
+      
+      $this->translator = new weblighter\Translator($_SESSION['user']['lang']);
+      $this->data['t'] = $this->translator;
+      
+      $this->data['url_prefix'] = \Data_Config::$url_prefix;     
+      $this->data['exception'] = $this->data['t']->_($this->message);
 
       //Default Translator or the one set in the route
       if (!empty(func_num_args()))
