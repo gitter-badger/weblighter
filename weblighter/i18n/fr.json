@@ -4,5 +4,7 @@
   "fr": "Français",
   "date_format": "d/m/Y",
   "exception_happened": "Une erreur s'est produite",
-  "action_not_defined": "L'action n'est pas définie"
+  "action_not_defined": "L'action n'est pas définie",
+  "error_database_access": "Erreur lors de l'accès à la base de données",
+  "error_mysql_1045": "Erreur MySQL: Accès non autorisé à la base de données"
 }

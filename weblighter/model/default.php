@@ -20,12 +20,23 @@ abstract class Model_Default
           if (empty($db['port'])) { $db['port'] = 3306; }
 
           $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s', $db['host'], $db['port'], $db['db'] );
+          try {
           $this->db[$db['name']] = new PDO($dsn, $db['user'], $db['pass'], $options);
-
+          }
+          catch (PDOException $ex) {
+            throw new \Exception('{_error_mysql_'.$ex->getCode().'}');
+          }
+            
           //Only 1 db ? then index it on $this->db directly
           if (count(\Data_Config::$db) == 1)
           {
-            $this->db = new PDO($dsn, $db['user'], $db['pass'], $options);
+            try {
+              $this->db = new PDO($dsn, $db['user'], $db['pass'], $options);
+            }
+            catch (PDOException $ex) {
+              throw new \Exception('{_error_mysql_'.$ex->getCode().'}');
+            }
+            
           }
         }
         elseif ($db['type'] == 'sqlite')

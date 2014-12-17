@@ -33,6 +33,12 @@ class weblighter {
         }
       });
 
+      //Basic Check: config.php file exists in app folder !!!
+      if (!file_exists(APP_PATH.'data/config.php'))
+      {
+        die('Config file missing. Please check your configuration file!');
+      }
+      
       // DEBUG mode set in app config file
       if (!empty(\Data_Config::$debug)) {
         error_reporting(-1);
@@ -127,7 +133,7 @@ class weblighter {
           if (is_string($leroute)) {
             $controller = $leroute;
             if (!class_exists($controller, true)) {
-              throw new \Exception('{action_not_defined}: ' . $action);
+              throw new \Exception('{_action_not_defined}: ' . $action);
             } else {
               $route = new $controller($lang);
               $method = "display";
@@ -411,7 +417,7 @@ class Translator {
     $this->locale = $alocale;
     $this->fallbacklocale = \Data_Config::$default_lang;
     $this->localeDir = \Data_Config::$locale_dir;
-
+        
     //First: Load Weblighter messages
     if (file_exists($file = WEBLIGHTER_LIB_PATH . $this->localeDir . $alocale . '.json')) {
       $msg = json_decode(file_get_contents($file), true);
