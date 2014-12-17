@@ -24,7 +24,7 @@ abstract class Model_Default
           $this->db[$db['name']] = new PDO($dsn, $db['user'], $db['pass'], $options);
           }
           catch (PDOException $ex) {
-            throw new \Exception('{_error_mysql_'.$ex->getCode().'}');
+            throw new \Exception('{_error_mysql_'.$ex->getCode().'} '.$db['name']);
           }
             
           //Only 1 db ? then index it on $this->db directly
@@ -34,7 +34,7 @@ abstract class Model_Default
               $this->db = new PDO($dsn, $db['user'], $db['pass'], $options);
             }
             catch (PDOException $ex) {
-              throw new \Exception('{_error_mysql_'.$ex->getCode().'}');
+              throw new \Exception('{_error_mysql_'.$ex->getCode().'} '.$db['name']);
             }
             
           }

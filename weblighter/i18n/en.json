@@ -6,5 +6,5 @@
   "exception_happened": "An error occured",
   "action_not_defined": "Action is not defined",
   "error_database_access": "Error while accessing the database",
-  "error_mysql_1045": "Error MySQL: Access denied to the database"
+  "error_mysql_1045": "Error MySQL: Access denied on database"
 }
