@@ -38,7 +38,7 @@ class weblighter {
       {
         die('Config file missing. Please check your configuration file!');
       }
-      
+
       // DEBUG mode set in app config file
       if (!empty(\Data_Config::$debug)) {
         error_reporting(-1);
@@ -56,11 +56,12 @@ class weblighter {
         throw new \Exception('Configuration problem in weblighter url_param missing !');
       }
       if (!empty($_GET[\Data_Config::$url_param])) {
-        $action = filter_var($_GET[\Data_Config::$url_param], FILTER_SANITIZE_STRING);
+        $action = preg_replace("/[^a-zA-Z0-9-_\s\/]/", "", $_GET[\Data_Config::$url_param]);
       }
       if (empty($action)) {
         $action = 'home';
       }
+      define('CURRENT_ACTION', $action);
 
       //DEFAULT Lang?
       session_start();
@@ -83,7 +84,7 @@ class weblighter {
        * we return an error
        */
       if (empty($routes)) {
-        throw new \Exception('action ' . $action . ' not defined!');
+        throw new \Exception('action ' . CURRENT_ACTION . ' not defined!');
       }
 
       /* Here is the router when routes are defined.
@@ -114,10 +115,20 @@ class weblighter {
           ':hex}' => '>[0-9a-f]+)',
       ];
 
-      if (!empty($_GET['lang'])) {
-        $lang = $_GET['lang'];
-        $_SESSION['user']['lang'] = $_GET['lang'];
-      } else {
+      if (!empty($_GET['lang']))
+      {
+        $lang = preg_replace("/[^a-zA-Z0-9-_\s\/]/", "", $_GET['lang']);
+        if ($this->is_lang_valid($lang))
+        {
+          $_SESSION['user']['lang'] = $lang;
+        }
+        else
+        {
+          throw new \Exception('{_lang_not_defined}: ' . $lang);
+        }
+      }
+      else
+      {
         $lang = $_SESSION['user']['lang'];
       }
 
@@ -126,14 +137,14 @@ class weblighter {
       foreach ($routes as $key => $leroute) {
         $pattern = strtr($key, $vars);
         $params = [];
-        if (preg_match('#^/?' . $pattern . '/?$#', $action, $params)) {
+        if (preg_match('#^/?' . $pattern . '/?$#', CURRENT_ACTION, $params)) {
           $found = 1;
 
           //route is just the controller (default method is display)
           if (is_string($leroute)) {
             $controller = $leroute;
             if (!class_exists($controller, true)) {
-              throw new \Exception('{_action_not_defined}: ' . $action);
+              throw new \Exception('{_action_not_defined}: ' . CURRENT_ACTION);
             } else {
               $route = new $controller($lang);
               $method = "display";
@@ -174,7 +185,7 @@ class weblighter {
         /* Routes were defined, but for this specific route, we didn't find a match
          * so let's output an error
          */
-        throw new \Exception('{_action_not_defined}: ' . $action);
+        throw new \Exception('{_action_not_defined}: ' . CURRENT_ACTION);
       }
     } catch (\Exception $e) {
       $this->content = (new \Controller_Exception($e->getMessage()))->display();
@@ -213,7 +224,16 @@ class weblighter {
     }
     return $avail_langs[0];
   }
-
+  
+  function is_lang_valid($lang)
+  {
+    $avail_langs = $this->geti18nlocales();
+    if (in_array($lang, $avail_langs)) {
+      return true;
+    }
+    return false;
+  }
+  
   function geti18nlocales() {
     $locales = glob(APP_PATH . 'i18n/*.json');
     $localenames = array();
@@ -292,11 +312,11 @@ class Tplparser {
     $this->content = $content;
   }
 
-  function generateUrl($action) {
-    if (empty($action)) {
-      $action = $this->data['action'];
+  function generateUrl($leaction) {
+    if (empty($leaction)) {
+      $leaction = $this->data['action'];
     }
-    return VIRTUAL_PATH . $this->data['url_prefix'] . $action;
+    return VIRTUAL_PATH . $this->data['url_prefix'] . $leaction;
   }
 
   function formatDate($date) {
@@ -346,7 +366,7 @@ class Tplparser {
     // {IF a.b = 'c'}
     $lecontent = preg_replace('~\{(?i)IF (\w+)\.(\w+) (=|(?i)eq) \'(\w+)\'\}~', '<?php if (((is_object(\$$1) && \$$1->$2 == \'$4\') or (is_array(\$$1) && \$$1[\'$2\'] == \'$4\')) || ((is_object($this->data[\'$1\']) && $this->data[\'$1\']->$2 == \'$4\') or (is_array($this->data[\'$1\']) && $this->data[\'$1\'][\'$2\'] == \'$4\'))) { ?>', $lecontent);
     // {IF a = c}
-    $lecontent = preg_replace('~\{(?i)IF (\w+) (=|(?i)eq) (\w+)\}~', '<?php if (\$$1 == \$$2) { ?>', $lecontent);
+    $lecontent = preg_replace('~\{(?i)IF (\w+) (=|(?i)eq) (\w+)\}~', '<?php if (\$$1 == \$$3) { ?>', $lecontent);
     // {IF a = 'c'}
     $lecontent = preg_replace('~\{(?i)IF (\w+) (=|(?i)eq) \'(\w+)\'\}~', '<?php if ((isset(\$$1) && (\$$1 == \'$3\')) or (isset($this->data[\'$1\']) && ( $this->data[\'$1\'] == \'$3\'))) { ?>', $lecontent);
     // {IF a cs 'c'}
@@ -417,7 +437,7 @@ class Translator {
     $this->locale = $alocale;
     $this->fallbacklocale = \Data_Config::$default_lang;
     $this->localeDir = \Data_Config::$locale_dir;
-        
+
     //First: Load Weblighter messages
     if (file_exists($file = WEBLIGHTER_LIB_PATH . $this->localeDir . $alocale . '.json')) {
       $msg = json_decode(file_get_contents($file), true);

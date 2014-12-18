@@ -15,7 +15,7 @@ class Controller_Exception
     {
       $this->data['site_title'] = \Data_Config::$site_title;
       $this->data['theme'] = \Data_Config::$theme;
-      $this->data['action'] = @$_GET['action'];
+      $this->data['action'] = CURRENT_ACTION;
       $this->data['site_slogan'] = Data_Config::$site_slogan;
       $this->data['page_title'] = 'Erreur';
       

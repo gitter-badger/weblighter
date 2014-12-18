@@ -8,14 +8,8 @@ abstract class Controller_Default
 
     $this->data['theme'] = \Data_Config::$theme;
 
-    if (!empty($_GET['action']))
-    {
-      $this->data['action'] = $_GET['action'];
-    }
-    else
-    {
-      $this->data['action'] = 'home';
-    }
+    $this->data['action'] = CURRENT_ACTION;
+
     $this->data['url_prefix'] = \Data_Config::$url_prefix;
 
     //Langs and current language
